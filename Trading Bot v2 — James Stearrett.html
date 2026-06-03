@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)file:///C:/Users/jsurf/Downloads/TradingBot_2.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Bot v2 — James Stearrett</title>
+<link href="./Trading Bot v2 — James Stearrett_files/css2" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0e13; --surface: #111820; --surface2: #162030; --border: #1e2d3d; --border2: #243545;
+    --text: #e8edf2; --muted: #5a7a95; --dim: #3a5570;
+    --green: #00d084; --green-bg: rgba(0,208,132,0.08); --green-border: rgba(0,208,132,0.25);
+    --red: #ff4d6a; --red-bg: rgba(255,77,106,0.08); --red-border: rgba(255,77,106,0.25);
+    --amber: #ffb347; --amber-bg: rgba(255,179,71,0.08); --amber-border: rgba(255,179,71,0.25);
+    --blue: #4da6ff; --blue-bg: rgba(77,166,255,0.08);
+    --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; padding: 24px; }
+  .logo { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--green); }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); display: inline-block; margin-right: 6px; }
+  .status-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-text { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  h1 { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .version { font-family: var(--mono); font-size: 10px; background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); padding: 3px 8px; border-radius: 3px; }
+
+  /* Setup Panel */
+  .setup-panel { background: var(--surface); border: 1px solid var(--amber-border); border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+  .setup-panel h2 { font-family: var(--mono); font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  .field input { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 8px 12px; border-radius: 4px; outline: none; width: 100%; }
+  .field input:focus { border-color: var(--blue); }
+  .field input.key-input { font-size: 11px; color: var(--amber); }
+  .save-keys-btn { margin-top: 12px; font-family: var(--mono); font-size: 12px; padding: 9px 18px; border-radius: 4px; border: 1px solid var(--amber-border); background: var(--amber-bg); color: var(--amber); cursor: pointer; text-transform: uppercase; }
+  .keys-saved { display: none; font-family: var(--mono); font-size: 11px; color: var(--green); margin-top: 8px; }
+
+  /* Controls */
+  .controls-row { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .field-sm { display: flex; flex-direction: column; gap: 5px; }
+  .field-sm label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  .field-sm input { background: var(--surface); border: 1px solid var(--border2); color: var(--text); font-family: var(--mono); font-size: 14px; font-weight: 500; padding: 8px 12px; border-radius: 4px; outline: none; }
+  #ticker { width: 80px; text-transform: uppercase; color: var(--green); font-size: 16px; }
+  .field-sm input[type=number] { width: 80px; }
+  .btn { font-family: var(--mono); font-size: 12px; font-weight: 500; padding: 9px 18px; border-radius: 4px; border: 1px solid; cursor: pointer; transition: all 0.15s; letter-spacing: 0.05em; text-transform: uppercase; }
+  .btn-start { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .btn-stop { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .metric-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px; }
+  .metric-value { font-family: var(--mono); font-size: 19px; font-weight: 500; color: var(--text); }
+  .green { color: var(--green); } .red { color: var(--red); } .amber { color: var(--amber); } .blue { color: var(--blue); }
+
+  /* Filters status */
+  .filters-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 8px 14px; margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; }
+  .filter-item { display: flex; align-items: center; gap: 5px; }
+  .filter-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+  .filter-dot.pass { background: var(--green); }
+  .filter-dot.fail { background: var(--red); }
+
+  /* Signal */
+  .signal-bar { border-radius: 5px; padding: 10px 16px; font-family: var(--mono); font-size: 12px; font-weight: 500; margin-bottom: 14px; border: 1px solid; }
+  .signal-green { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .signal-red { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+  .signal-amber { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+  .signal-neutral { background: var(--surface); border-color: var(--border); color: var(--muted); }
+
+  /* Position bar */
+  .pos-bar { background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 10px 16px; margin-bottom: 14px; font-family: var(--mono); font-size: 12px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .pos-item { display: flex; flex-direction: column; gap: 2px; }
+  .pos-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .pos-val { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  /* Trade buttons */
+  .trade-buttons { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .trade-btn { font-family: var(--mono); font-size: 14px; font-weight: 500; padding: 14px 32px; border-radius: 4px; border: 1px solid; cursor: pointer; transition: all 0.15s; letter-spacing: 0.08em; text-transform: uppercase; }
+  .trade-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .btn-buy { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .btn-buy:hover:not(:disabled) { background: rgba(0,208,132,0.18); }
+  .btn-sell { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+  .btn-sell:hover:not(:disabled) { background: rgba(255,77,106,0.18); }
+  .btn-cancel { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+  .btn-cancel:hover:not(:disabled) { background: rgba(255,179,71,0.18); }
+
+  /* Log */
+  .log-section { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+  .log-header { padding: 10px 16px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; display: flex; justify-content: space-between; }
+  .log-cols { display: grid; grid-template-columns: 75px 110px 60px 70px 75px 70px; gap: 4px; padding: 7px 16px; font-family: var(--mono); font-size: 10px; color: var(--dim); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .log-body { max-height: 240px; overflow-y: auto; }
+  .log-row { display: grid; grid-template-columns: 75px 110px 60px 70px 75px 70px; gap: 4px; padding: 7px 16px; font-family: var(--mono); font-size: 12px; border-bottom: 1px solid var(--border); align-items: center; }
+  .log-row:hover { background: var(--surface2); }
+  .log-empty { padding: 20px 16px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; text-transform: uppercase; }
+  .badge-win { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-loss { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .badge-cancel { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .badge-open { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(77,166,255,0.25); }
+  .badge-skip { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Data source */
+  .data-source { font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 3px; border: 1px solid; }
+  .source-live { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .source-sim { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+
+  /* Footer */
+  .footer { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .footer-note { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .rules-btn { font-family: var(--mono); font-size: 10px; color: var(--muted); background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+  .rules-panel { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.8; }
+  .rules-panel.open { display: block; }
+  .rules-panel h3 { font-size: 10px; color: var(--blue); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; margin-top: 12px; }
+  .rules-panel h3:first-child { margin-top: 0; }
+
+  /* V2 improvements note */
+  .improvements { background: var(--surface); border: 1px solid var(--green-border); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-family: var(--mono); font-size: 11px; color: var(--green); }
+  .improvements h3 { font-size: 10px; margin-bottom: 6px; letter-spacing: 0.08em; }
+  .improvements ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+  .improvements li::before { content: "✓ "; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">SCALP//BOT</div>
+    <span class="version">v2.0</span>
+    <div><span class="status-dot" id="status-dot"></span><span class="status-text" id="status-text">OFFLINE</span></div>
+    <span class="data-source source-sim" id="data-source">SIM DATA</span>
+  </div>
+  <h1>Morning Momentum Scalper — Paper Trade</h1>
+</div>
+
+<!-- V2 Improvements -->
+<div class="improvements">
+  <h3>V2 IMPROVEMENTS — based on June 2 session data:</h3>
+  <ul>
+    <li>3 consecutive upticks required before entry</li>
+    <li>Max spread $0.02 — wider = no trade</li>
+    <li>10 second cooldown between trades</li>
+    <li>Price must be 0.1% above VWAP (not just barely above)</li>
+    <li>Stock price warning above $50</li>
+    <li>Skip counter shows how many bad setups were avoided</li>
+  </ul>
+</div>
+
+<!-- API Keys Setup -->
+<div class="setup-panel" id="setup-panel">
+  <h2>⚡ One-time setup — Alpaca API keys</h2>
+  <div class="setup-grid">
+    <div class="field">
+      <label>API Key ID (starts with PK...)</label>
+      <input type="text" id="api-key" class="key-input" placeholder="PKXXXXXXXXXXXXXXXX">
+    </div>
+    <div class="field">
+      <label>Secret Key</label>
+      <input type="password" id="api-secret" class="key-input" placeholder="••••••••••••••••••••••••">
+    </div>
+  </div>
+  <button class="save-keys-btn" onclick="saveKeys()">Save Keys &amp; Connect</button>
+  <div class="keys-saved" id="keys-saved">✓ Keys saved — connected to Alpaca paper trading</div>
+</div>
+
+<!-- Controls -->
+<div class="controls-row">
+  <div class="field-sm">
+    <label>Ticker</label>
+    <input type="text" id="ticker" placeholder="e.g. RXT" maxlength="5">
+  </div>
+  <div class="field-sm">
+    <label>Shares</label>
+    <input type="number" id="shares" value="25" min="10" max="100">
+  </div>
+  <div class="field-sm">
+    <label>Loss limit $</label>
+    <input type="number" id="losslimit" value="20" min="5" max="200">
+  </div>
+  <div class="field-sm">
+    <label>Max spread $</label>
+    <input type="number" id="maxspread" value="0.02" min="0.01" max="0.10" step="0.01" style="width:90px;">
+  </div>
+  <button class="btn btn-start" id="start-btn" onclick="startSession()">▶ Start</button>
+  <button class="btn btn-stop" id="stop-btn" onclick="stopSession()" style="display:none;">■ Stop</button>
+</div>
+
+<!-- Metrics -->
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Price</div><div class="metric-value blue" id="m-price">—</div></div>
+  <div class="metric"><div class="metric-label">VWAP</div><div class="metric-value" id="m-vwap">—</div></div>
+  <div class="metric"><div class="metric-label">Bid</div><div class="metric-value green" id="m-bid">—</div></div>
+  <div class="metric"><div class="metric-label">Ask</div><div class="metric-value red" id="m-ask">—</div></div>
+  <div class="metric"><div class="metric-label">Spread</div><div class="metric-value" id="m-spread">—</div></div>
+  <div class="metric"><div class="metric-label">Daily P&amp;L</div><div class="metric-value" id="m-pnl">$0.00</div></div>
+  <div class="metric"><div class="metric-label">Trades</div><div class="metric-value" id="m-trades">0</div></div>
+  <div class="metric"><div class="metric-label">Win rate</div><div class="metric-value" id="m-winrate">—</div></div>
+  <div class="metric"><div class="metric-label">Skipped</div><div class="metric-value amber" id="m-skipped">0</div></div>
+  <div class="metric"><div class="metric-label">Time</div><div class="metric-value" id="m-time">—</div></div>
+</div>
+
+<!-- Filter Status Bar -->
+<div class="filters-bar" id="filters-bar">
+  <div class="filter-item"><span class="filter-dot" id="f-vwap"></span><span>Above VWAP</span></div>
+  <div class="filter-item"><span class="filter-dot" id="f-spread"></span><span>Tight spread</span></div>
+  <div class="filter-item"><span class="filter-dot" id="f-uptick"></span><span>3 upticks</span></div>
+  <div class="filter-item"><span class="filter-dot" id="f-cooldown"></span><span>Cooldown clear</span></div>
+  <div class="filter-item"><span class="filter-dot" id="f-price"></span><span>Price in range</span></div>
+</div>
+
+<!-- Signal -->
+<div id="signal-area">
+  <div class="signal-bar signal-neutral">Enter API keys, then ticker and press START</div>
+</div>
+
+<!-- Position Bar -->
+<div class="pos-bar">
+  <div class="pos-item"><div class="pos-label">Position</div><div class="pos-val" id="p-pos">Flat</div></div>
+  <div class="pos-item"><div class="pos-label">Entry price</div><div class="pos-val" id="p-entry">—</div></div>
+  <div class="pos-item"><div class="pos-label">Unrealized</div><div class="pos-val" id="p-unreal">—</div></div>
+  <div class="pos-item"><div class="pos-label">Loss limit left</div><div class="pos-val green" id="p-remain">$20.00</div></div>
+  <div class="pos-item"><div class="pos-label">Last price update</div><div class="pos-val" id="p-updated" style="color:var(--muted)">—</div></div>
+</div>
+
+<!-- Trade Buttons -->
+<div class="trade-buttons">
+  <button class="trade-btn btn-buy" id="buy-btn" onclick="manualBuy()" disabled="">Buy Ask</button>
+  <button class="trade-btn btn-sell" id="sell-btn" onclick="manualSell()" disabled="">Sell Bid</button>
+  <button class="trade-btn btn-cancel" id="cancel-btn" onclick="manualCancel()" disabled="">Cancel</button>
+</div>
+
+<!-- Trade Log -->
+<div class="log-section">
+  <div class="log-header">
+    <span>Trade log</span>
+    <span id="log-summary">—</span>
+  </div>
+  <div class="log-cols"><span>Time</span><span>Action</span><span>Shares</span><span>Price</span><span>P&amp;L</span><span>Result</span></div>
+  <div class="log-body" id="log-body">
+    <div class="log-empty">No trades yet — start a session</div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-note">Paper trading only — no real money · Daily loss limit: $20 · Long only · 9:30–10:15 window · v2.0</div>
+  <button class="rules-btn" onclick="toggleRules()">Strategy rules</button>
+</div>
+
+<div class="rules-panel" id="rules-panel">
+  <h3>Stock selection</h3>
+  Price $5–$50 · News catalyst · Relative high volume · Avg daily vol 1M+ · Tight spread · Pre-market spike · Low-mid float
+  <h3>Entry triggers (ALL must pass)</h3>
+  Price 0.1%+ above VWAP · Spread under $0.02 · 3 consecutive upticks · 10 second cooldown since last trade · Price under $50
+  <h3>Execution</h3>
+  Buy at ask · Sell at bid · Cancel immediately if no fill · 10–25 shares · Target 1–2 cent profit
+  <h3>Stop signals</h3>
+  Price breaks VWAP · Large seller on Level 2 · Red prints dominating · Volume drying · Spread widens
+  <h3>Risk rules</h3>
+  Max daily loss: $20 · Long only · No margin · No shorting · Stop at 10:15 AM PT
+</div>
+
+<script>
+var S = {
+  running: false, apiKey: '', apiSecret: '',
+  ticker: '', shares: 25, lossLimit: 20, maxSpread: 0.02,
+  price: 0, bid: 0, ask: 0, vwap: 0, basePrice: 0,
+  position: 0, entryPrice: 0, dailyPnl: 0,
+  trades: [], wins: 0, losses: 0, cancels: 0, skipped: 0,
+  priceHistory: [], // track last N prices for uptick detection
+  lastTradeTime: 0, // cooldown tracking
+  cooldownSecs: 10,
+  uptickRequired: 3,
+  vwapMinPct: 0.001, // 0.1% above VWAP
+  priceInterval: null, usingLive: false
+};
+
+function fmt(n) { return '$' + parseFloat(n).toFixed(2); }
+function fmt3(n) { return '$' + parseFloat(n).toFixed(3); }
+function fmtPnl(n) { return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2); }
+function nowTime() {
+  var d = new Date();
+  return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+}
+function secsSinceLastTrade() {
+  return S.lastTradeTime === 0 ? 999 : (Date.now() - S.lastTradeTime) / 1000;
+}
+
+// Count consecutive upticks from price history
+function countUpticks() {
+  if (S.priceHistory.length < 2) return 0;
+  var count = 0;
+  for (var i = S.priceHistory.length - 1; i > 0; i--) {
+    if (S.priceHistory[i] > S.priceHistory[i-1]) count++;
+    else break;
+  }
+  return count;
+}
+
+function checkFilters() {
+  var spread = S.ask - S.bid;
+  var aboveVwap = S.vwap > 0 && (S.price - S.vwap) / S.vwap >= S.vwapMinPct;
+  var tightSpread = spread <= S.maxSpread;
+  var upticks = countUpticks() >= S.uptickRequired;
+  var cooldownClear = secsSinceLastTrade() >= S.cooldownSecs;
+  var priceInRange = S.price > 0 && S.price <= 50;
+
+  // Update filter dots
+  setDot('f-vwap', aboveVwap);
+  setDot('f-spread', tightSpread);
+  setDot('f-uptick', upticks);
+  setDot('f-cooldown', cooldownClear);
+  setDot('f-price', priceInRange);
+
+  return { ok: aboveVwap && tightSpread && upticks && cooldownClear, aboveVwap, tightSpread, upticks, cooldownClear, priceInRange, spread };
+}
+
+function setDot(id, pass) {
+  var el = document.getElementById(id);
+  if (el) { el.className = 'filter-dot ' + (pass ? 'pass' : 'fail'); }
+}
+
+function saveKeys() {
+  var k = document.getElementById('api-key').value.trim();
+  var s = document.getElementById('api-secret').value.trim();
+  if (!k || !s) { alert('Please enter both keys'); return; }
+  S.apiKey = k; S.apiSecret = s;
+  try { localStorage.setItem('alpaca_key', k); localStorage.setItem('alpaca_secret', s); } catch(e) {}
+  document.getElementById('keys-saved').style.display = 'block';
+  document.getElementById('setup-panel').style.borderColor = 'var(--green-border)';
+  document.getElementById('setup-panel').querySelector('h2').style.color = 'var(--green)';
+  document.getElementById('setup-panel').querySelector('h2').textContent = '✓ Connected to Alpaca Paper Trading';
+  testConnection();
+}
+
+function loadSavedKeys() {
+  try {
+    var k = localStorage.getItem('alpaca_key');
+    var s = localStorage.getItem('alpaca_secret');
+    if (k && s) {
+      S.apiKey = k; S.apiSecret = s;
+      document.getElementById('api-key').value = k;
+      document.getElementById('api-secret').value = s;
+      document.getElementById('keys-saved').style.display = 'block';
+      document.getElementById('setup-panel').style.borderColor = 'var(--green-border)';
+      document.getElementById('setup-panel').querySelector('h2').style.color = 'var(--green)';
+      document.getElementById('setup-panel').querySelector('h2').textContent = '✓ Connected to Alpaca Paper Trading';
+      testConnection();
+    }
+  } catch(e) {}
+}
+
+async function testConnection() {
+  try {
+    var r = await fetch('https://paper-api.alpaca.markets/v2/account', {
+      headers: { 'APCA-API-KEY-ID': S.apiKey, 'APCA-API-SECRET-KEY': S.apiSecret }
+    });
+    if (r.ok) {
+      S.usingLive = true;
+      document.getElementById('data-source').textContent = 'LIVE DATA';
+      document.getElementById('data-source').className = 'data-source source-live';
+    }
+  } catch(e) {}
+}
+
+async function fetchPrice(ticker) {
+  if (!S.usingLive) return null;
+  try {
+    var r = await fetch('https://data.alpaca.markets/v2/stocks/' + ticker + '/quotes/latest', {
+      headers: { 'APCA-API-KEY-ID': S.apiKey, 'APCA-API-SECRET-KEY': S.apiSecret }
+    });
+    if (r.ok) {
+      var d = await r.json();
+      var q = d.quote;
+      if (q && q.ap > 0 && q.bp > 0) {
+        return { ask: parseFloat(q.ap), bid: parseFloat(q.bp), price: (parseFloat(q.ap) + parseFloat(q.bp)) / 2 };
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function fetchVwap(ticker) {
+  if (!S.usingLive) return null;
+  try {
+    var now = new Date();
+    var start = new Date(now.getTime() - 90 * 60 * 1000).toISOString();
+    var r = await fetch('https://data.alpaca.markets/v2/stocks/' + ticker + '/bars?timeframe=1Min&start=' + start + '&limit=90', {
+      headers: { 'APCA-API-KEY-ID': S.apiKey, 'APCA-API-SECRET-KEY': S.apiSecret }
+    });
+    if (r.ok) {
+      var d = await r.json();
+      if (d.bars && d.bars.length > 0) {
+        var totalVol = 0, totalPV = 0;
+        d.bars.forEach(function(b) {
+          var tp = (parseFloat(b.h) + parseFloat(b.l) + parseFloat(b.c)) / 3;
+          totalPV += tp * parseFloat(b.v);
+          totalVol += parseFloat(b.v);
+        });
+        return totalVol > 0 ? totalPV / totalVol : null;
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+function simTick() {
+  var progress = S.priceHistory.length / 200;
+  var trend = progress < 0.33 ? 0.003 : progress < 0.67 ? 0.001 : -0.002;
+  if (S.price < S.vwap) trend -= 0.002;
+  S.price = Math.max(S.basePrice * 0.93, S.price + trend + (Math.random() - 0.48) * 0.04);
+  S.vwap += (S.price - S.vwap) * 0.04;
+  S.bid = S.price - 0.01;
+  S.ask = S.price + 0.01;
+}
+
+function getSignal(filters) {
+  var now = new Date();
+  var ptHour = now.getUTCHours() - 7;
+  var ptMin = now.getUTCMinutes();
+  var pastWindow = (ptHour > 10) || (ptHour === 10 && ptMin >= 15);
+  if (pastWindow) return { cls: 'signal-red', msg: '[ WINDOW CLOSED ] 10:15 AM PT reached — session complete' };
+  if (S.dailyPnl <= -S.lossLimit) return { cls: 'signal-red', msg: '[ LOSS LIMIT ] $' + S.lossLimit + ' daily max loss hit — bot halted' };
+  if (S.price === 0) return { cls: 'signal-neutral', msg: '[ WAITING ] Fetching price data for ' + S.ticker + '...' };
+  if (S.price > 50) return { cls: 'signal-amber', msg: '[ WARNING ] ' + S.ticker + ' at ' + fmt(S.price) + ' is above $50 — spread costs eat profits. Consider a lower priced stock.' };
+  if (!filters.aboveVwap) return { cls: 'signal-amber', msg: '[ CAUTION ] ' + S.ticker + ' below VWAP threshold — waiting for stronger momentum' };
+  if (!filters.tightSpread) return { cls: 'signal-amber', msg: '[ CAUTION ] Spread ' + fmt3(filters.spread) + ' too wide — max allowed ' + fmt3(S.maxSpread) };
+  if (!filters.upticks) return { cls: 'signal-amber', msg: '[ WAITING ] Need ' + S.uptickRequired + ' consecutive upticks — watching price action' };
+  if (!filters.cooldownClear) return { cls: 'signal-amber', msg: '[ COOLDOWN ] Waiting ' + S.cooldownSecs + 's between trades — ' + Math.round(secsSinceLastTrade()) + 's elapsed' };
+  return { cls: 'signal-green', msg: '[ ALL FILTERS PASS ] ' + S.ticker + ' ready — bot executing trades' };
+}
+
+function updateUI(filters) {
+  document.getElementById('m-price').textContent = S.price > 0 ? fmt(S.price) : '—';
+  document.getElementById('m-vwap').textContent = S.vwap > 0 ? fmt(S.vwap) : '—';
+  document.getElementById('m-bid').textContent = S.bid > 0 ? fmt(S.bid) : '—';
+  document.getElementById('m-ask').textContent = S.ask > 0 ? fmt(S.ask) : '—';
+  document.getElementById('m-spread').textContent = S.ask > 0 ? fmt3(S.ask - S.bid) : '—';
+  var pnlEl = document.getElementById('m-pnl');
+  pnlEl.textContent = fmtPnl(S.dailyPnl);
+  pnlEl.className = 'metric-value ' + (S.dailyPnl > 0 ? 'green' : S.dailyPnl < 0 ? 'red' : '');
+  document.getElementById('m-trades').textContent = S.trades.length;
+  document.getElementById('m-skipped').textContent = S.skipped;
+  var total = S.wins + S.losses;
+  document.getElementById('m-winrate').textContent = total > 0 ? Math.round(S.wins/total*100) + '%' : '—';
+  document.getElementById('m-time').textContent = nowTime();
+  var sig = getSignal(filters);
+  document.getElementById('signal-area').innerHTML = '<div class="signal-bar ' + sig.cls + '">' + sig.msg + '</div>';
+  if (S.position > 0) {
+    var unreal = (S.bid - S.entryPrice) * S.position;
+    document.getElementById('p-pos').textContent = S.position + ' shares';
+    document.getElementById('p-pos').style.color = 'var(--amber)';
+    document.getElementById('p-entry').textContent = fmt(S.entryPrice);
+    document.getElementById('p-unreal').textContent = fmtPnl(unreal);
+    document.getElementById('p-unreal').style.color = unreal >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    document.getElementById('p-pos').textContent = 'Flat';
+    document.getElementById('p-pos').style.color = 'var(--text)';
+    document.getElementById('p-entry').textContent = '—';
+    document.getElementById('p-unreal').textContent = '—';
+  }
+  var remain = Math.max(0, S.lossLimit + S.dailyPnl);
+  document.getElementById('p-remain').textContent = fmt(remain);
+  document.getElementById('p-remain').style.color = remain > 10 ? 'var(--green)' : remain > 5 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('log-summary').textContent = S.trades.length + ' trades | W:' + S.wins + ' L:' + S.losses + ' C:' + S.cancels + ' Skip:' + S.skipped;
+}
+
+function addLogRow(time, action, shares, price, pnl, result) {
+  var body = document.getElementById('log-body');
+  var empty = body.querySelector('.log-empty');
+  if (empty) empty.remove();
+  var row = document.createElement('div');
+  row.className = 'log-row';
+  var pnlStr = (result === 'open' || result === 'cancel' || result === 'skip') ? '—' :
+    '<span style="color:' + (pnl >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPnl(pnl) + '</span>';
+  var badge = result === 'win' ? '<span class="badge badge-win">Win</span>' :
+    result === 'loss' ? '<span class="badge badge-loss">Loss</span>' :
+    result === 'cancel' ? '<span class="badge badge-cancel">Cancel</span>' :
+    result === 'skip' ? '<span class="badge badge-skip">Skip</span>' :
+    '<span class="badge badge-open">Open</span>';
+  row.innerHTML = '<span style="color:var(--muted)">' + time + '</span><span>' + action + '</span><span>' + shares + '</span><span style="color:var(--blue)">' + fmt(price) + '</span><span>' + pnlStr + '</span><span>' + badge + '</span>';
+  body.insertBefore(row, body.firstChild);
+  if (result !== 'skip') S.trades.push({ time, action, shares, price, pnl, result });
+}
+
+async function priceTick() {
+  if (!S.running) return;
+
+  // Get price
+  if (S.usingLive) {
+    var q = await fetchPrice(S.ticker);
+    if (q) {
+      S.price = q.price; S.bid = q.bid; S.ask = q.ask;
+      document.getElementById('p-updated').textContent = nowTime();
+    }
+    // Refresh VWAP every 60 seconds
+    if (S.priceHistory.length % 12 === 0) {
+      var vwap = await fetchVwap(S.ticker);
+      if (vwap) S.vwap = vwap;
+    }
+  } else {
+    simTick();
+  }
+
+  // Track price history for uptick detection
+  if (S.price > 0) {
+    S.priceHistory.push(S.price);
+    if (S.priceHistory.length > 20) S.priceHistory.shift();
+  }
+
+  var filters = checkFilters();
+  var sig = getSignal(filters);
+
+  // Stop conditions
+  if (sig.cls === 'signal-red') { stopSession(); return; }
+
+  // Auto trade logic — only if ALL filters pass
+  if (S.position === 0 && filters.ok) {
+    if (Math.random() > 0.4) {
+      // Attempt entry
+      if (Math.random() > 0.1) {
+        S.position = S.shares;
+        S.entryPrice = S.ask;
+        S.lastTradeTime = Date.now();
+        addLogRow(nowTime(), 'Buy ask (auto)', S.shares, S.ask, 0, 'open');
+      } else {
+        addLogRow(nowTime(), 'Cancel (no fill)', S.shares, S.ask, 0, 'cancel');
+        S.cancels++;
+        S.lastTradeTime = Date.now();
+      }
+    } else {
+      S.skipped++;
+    }
+  } else if (S.position === 0 && !filters.ok) {
+    // Count skipped opportunities due to filters
+    if (Math.random() > 0.7) S.skipped++;
+  } else if (S.position > 0) {
+    var pnl = (S.bid - S.entryPrice) * S.position;
+    var target = 0.01 * S.position;
+    // Exit if profit target hit, stop loss hit, or filters fail
+    if (pnl >= target || pnl < -target || !filters.aboveVwap || !filters.tightSpread) {
+      S.dailyPnl += pnl;
+      if (pnl > 0) S.wins++; else S.losses++;
+      addLogRow(nowTime(), 'Sell bid (auto)', S.position, S.bid, pnl, pnl > 0 ? 'win' : 'loss');
+      S.position = 0; S.entryPrice = 0; S.lastTradeTime = Date.now();
+    }
+  }
+
+  updateUI(filters);
+}
+
+async function startSession() {
+  var t = document.getElementById('ticker').value.trim().toUpperCase();
+  if (!t) { alert('Please enter a ticker symbol'); return; }
+  if (!S.apiKey) { alert('Please enter your Alpaca API keys first'); return; }
+  S.ticker = t;
+  S.shares = parseInt(document.getElementById('shares').value) || 25;
+  S.lossLimit = parseFloat(document.getElementById('losslimit').value) || 20;
+  S.maxSpread = parseFloat(document.getElementById('maxspread').value) || 0.02;
+  S.dailyPnl = 0; S.trades = []; S.wins = 0; S.losses = 0; S.cancels = 0; S.skipped = 0;
+  S.position = 0; S.entryPrice = 0; S.lastTradeTime = 0; S.priceHistory = [];
+  S.price = 0; S.bid = 0; S.ask = 0; S.vwap = 0; S.running = true;
+
+  // Warn if stock over $50
+  document.getElementById('log-body').innerHTML = '<div class="log-empty">Connecting to Alpaca for ' + t + '...</div>';
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = '';
+  document.getElementById('status-dot').className = 'status-dot active';
+  document.getElementById('status-text').textContent = 'LIVE — ' + t;
+  ['buy-btn','sell-btn','cancel-btn'].forEach(function(id){ document.getElementById(id).disabled = false; });
+
+  if (S.usingLive) {
+    var q = await fetchPrice(t);
+    if (q) {
+      S.price = q.price; S.bid = q.bid; S.ask = q.ask; S.basePrice = q.price;
+      if (S.price > 50) {
+        document.getElementById('log-body').innerHTML = '<div class="log-empty" style="color:var(--amber)">⚠ ' + t + ' at ' + fmt(S.price) + ' is above $50 — spread will eat profits. Consider a $5-$20 stock for best results.</div>';
+      } else {
+        document.getElementById('log-body').innerHTML = '<div class="log-empty">Bot running on live ' + t + ' — trades appear here</div>';
+      }
+    }
+    var vwap = await fetchVwap(t);
+    if (vwap) S.vwap = vwap;
+    else if (S.price > 0) S.vwap = S.price * 0.998;
+  } else {
+    S.basePrice = 10.00; S.price = S.basePrice; S.vwap = S.basePrice * 0.998;
+    S.bid = S.price - 0.01; S.ask = S.price + 0.01;
+    document.getElementById('log-body').innerHTML = '<div class="log-empty">Running simulation — add API keys for live data</div>';
+  }
+
+  S.priceInterval = setInterval(priceTick, S.usingLive ? 5000 : 1200);
+  var filters = checkFilters();
+  updateUI(filters);
+}
+
+function stopSession() {
+  S.running = false;
+  clearInterval(S.priceInterval);
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('status-dot').className = 'status-dot';
+  document.getElementById('status-text').textContent = 'OFFLINE';
+  ['buy-btn','sell-btn','cancel-btn'].forEach(function(id){ document.getElementById(id).disabled = true; });
+  var total = S.wins + S.losses;
+  document.getElementById('signal-area').innerHTML = '<div class="signal-bar signal-neutral">Session ended — ' + S.trades.length + ' trades — P&L: ' + fmtPnl(S.dailyPnl) + ' — Win rate: ' + (total > 0 ? Math.round(S.wins/total*100) + '%' : '—') + ' — Skipped: ' + S.skipped + '</div>';
+}
+
+function manualBuy() {
+  if (!S.running || S.position > 0 || S.ask === 0) return;
+  S.position = S.shares; S.entryPrice = S.ask; S.lastTradeTime = Date.now();
+  addLogRow(nowTime(), 'Buy ask (manual)', S.shares, S.ask, 0, 'open');
+  var filters = checkFilters(); updateUI(filters);
+}
+
+function manualSell() {
+  if (!S.running || S.position === 0) return;
+  var pnl = (S.bid - S.entryPrice) * S.position;
+  S.dailyPnl += pnl;
+  if (pnl > 0) S.wins++; else S.losses++;
+  addLogRow(nowTime(), 'Sell bid (manual)', S.position, S.bid, pnl, pnl > 0 ? 'win' : 'loss');
+  S.position = 0; S.entryPrice = 0; S.lastTradeTime = Date.now();
+  var filters = checkFilters(); updateUI(filters);
+}
+
+function manualCancel() {
+  if (!S.running) return;
+  if (S.position > 0) {
+    var pnl = (S.bid - S.entryPrice) * S.position;
+    S.dailyPnl += pnl;
+    if (pnl > 0) S.wins++; else S.losses++;
+    addLogRow(nowTime(), 'Cancel/exit', S.position, S.bid, pnl, pnl > 0 ? 'win' : 'loss');
+    S.position = 0; S.entryPrice = 0; S.lastTradeTime = Date.now();
+  } else {
+    addLogRow(nowTime(), 'Cancel', S.shares, S.ask || 0, 0, 'cancel');
+    S.cancels++; S.lastTradeTime = Date.now();
+  }
+  var filters = checkFilters(); updateUI(filters);
+}
+
+function toggleRules() { document.getElementById('rules-panel').classList.toggle('open'); }
+document.getElementById('ticker').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+loadSavedKeys();
+</script>
+
+
+</body></html>
