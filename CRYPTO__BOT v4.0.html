@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<!-- saved from url=(0049)file:///C:/Users/jsurf/Downloads/CryptoBot_3.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRYPTO//BOT v4.0</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #00ff88; font-family: 'Courier New', monospace; font-size: 13px; }
+  
+  #header { background: #0d0d0d; border-bottom: 1px solid #1a1a1a; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  #header h1 { font-size: 18px; font-weight: bold; letter-spacing: 2px; color: #00ff88; }
+  #header h1 span { color: #333; }
+  #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; display: inline-block; margin-right: 6px; }
+  #status-dot.online { background: #00ff88; box-shadow: 0 0 6px #00ff88; animation: pulse 2s infinite; }
+  #status-dot.error { background: #ff4444; box-shadow: 0 0 6px #ff4444; }
+  #status-dot.connecting { background: #ffaa00; box-shadow: 0 0 6px #ffaa00; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  #status-text { font-size: 11px; color: #666; }
+  #header-right { font-size: 10px; color: #333; letter-spacing: 1px; }
+
+  #data-banner { background: #0d1a0d; border-bottom: 1px solid #0d2a0d; padding: 6px 16px; display: flex; align-items: center; gap: 16px; font-size: 11px; color: #00aa55; }
+  #data-banner .source-label { color: #00ff88; font-weight: bold; }
+  #connect-btn { margin-left: auto; background: #00ff88; color: #000; border: none; padding: 6px 16px; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold; cursor: pointer; letter-spacing: 1px; }
+  #connect-btn:hover { background: #00cc66; }
+  #connect-btn.connected { background: #1a1a1a; color: #00ff88; border: 1px solid #00ff88; }
+
+  #controls { background: #0d0d0d; border-bottom: 1px solid #1a1a1a; padding: 8px 16px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .ctrl-group { display: flex; align-items: center; gap: 6px; }
+  .ctrl-label { font-size: 10px; color: #555; letter-spacing: 1px; }
+  .ctrl-input { background: #1a1a1a; border: 1px solid #2a2a2a; color: #00ff88; padding: 4px 8px; width: 70px; font-family: 'Courier New', monospace; font-size: 12px; }
+  .ctrl-input:focus { outline: none; border-color: #00ff88; }
+  #start-btn { background: #00ff88; color: #000; border: none; padding: 7px 20px; font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold; cursor: pointer; letter-spacing: 1px; margin-left: auto; }
+  #start-btn:hover { background: #00cc66; }
+  #start-btn.running { background: #ff4444; color: #fff; }
+  #start-btn.running:hover { background: #cc3333; }
+
+  #stats-bar { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid #1a1a1a; }
+  .stat-box { padding: 10px 16px; border-right: 1px solid #1a1a1a; }
+  .stat-box:last-child { border-right: none; }
+  .stat-label { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-value { font-size: 16px; font-weight: bold; color: #00ff88; }
+  .stat-value.pos { color: #00ff88; }
+  .stat-value.neg { color: #ff4444; }
+  .stat-value.neutral { color: #666; }
+
+  #coins-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #1a1a1a; }
+  .coin-card { border-right: 1px solid #1a1a1a; padding: 12px 16px; }
+  .coin-card:last-child { border-right: none; }
+  .coin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .coin-name { font-size: 16px; font-weight: bold; color: #fff; }
+  .coin-full { font-size: 10px; color: #444; margin-top: 1px; }
+  .coin-price { font-size: 20px; font-weight: bold; color: #00ff88; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .coin-price.up { color: #00ff88; }
+  .coin-price.down { color: #ff4444; }
+  .coin-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .metric { }
+  .metric-label { font-size: 9px; color: #444; letter-spacing: 1px; margin-bottom: 2px; }
+  .metric-value { font-size: 12px; color: #888; }
+  .metric-value.hot { color: #ffaa00; font-weight: bold; }
+  .metric-value.spike { color: #ff4444; font-weight: bold; animation: blink 0.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .coin-status { margin-top: 8px; padding: 3px 8px; font-size: 10px; text-align: center; border: 1px solid #1a1a1a; color: #333; }
+  .coin-status.offline { color: #444; border-color: #1a1a1a; }
+  .coin-status.watching { color: #555; border-color: #333; }
+  .coin-status.active { color: #00ff88; border-color: #00ff88; background: #001a0d; }
+  .coin-status.in-trade { color: #ffaa00; border-color: #ffaa00; background: #1a1100; }
+
+  #trade-log { padding: 10px 16px; }
+  .trade-log-title { font-size: 10px; color: #444; letter-spacing: 2px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #1a1a1a; }
+  #trade-entries { max-height: 200px; overflow-y: auto; }
+  .trade-entry { padding: 4px 0; border-bottom: 1px solid #111; display: grid; grid-template-columns: 80px 50px 80px 80px 80px 80px auto; gap: 8px; font-size: 11px; color: #555; }
+  .trade-entry .te-time { color: #444; }
+  .trade-entry .te-coin { color: #888; font-weight: bold; }
+  .trade-entry .te-type { }
+  .trade-entry .te-type.buy { color: #00ff88; }
+  .trade-entry .te-type.sell { color: #ff4444; }
+  .trade-entry .te-pnl.pos { color: #00ff88; }
+  .trade-entry .te-pnl.neg { color: #ff4444; }
+  .no-trades { color: #333; font-size: 11px; padding: 8px 0; }
+
+  #error-banner { display: none; background: #1a0000; border: 1px solid #440000; color: #ff6666; padding: 8px 16px; font-size: 11px; margin: 8px 16px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div style="display:flex;align-items:center;gap:10px">
+    <h1>CRYPTO<span>//</span>BOT <span style="color:#333;font-size:13px">v4.0</span></h1>
+    <span id="status-dot"></span>
+    <span id="status-text">OFFLINE</span>
+  </div>
+  <div id="header-right">24/7 CRYPTO MOMENTUM SCALPER — PAPER TRADING</div>
+</div>
+
+<div id="data-banner">
+  <span>⚡</span>
+  <span class="source-label">BINANCE LIVE FEED</span>
+  <span style="color:#444">·</span>
+  <span>BTC · ETH · SOL · XRP</span>
+  <span style="color:#444">·</span>
+  <span>Volume + Momentum Strategy</span>
+  <button id="connect-btn" onclick="toggleConnect()">▶ CONNECT LIVE PRICES</button>
+</div>
+
+<div id="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">TRADE SIZE $</span>
+    <input class="ctrl-input" id="tradeSize" type="number" value="100">
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">DAILY LOSS LIMIT $</span>
+    <input class="ctrl-input" id="dailyLoss" type="number" value="20">
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">PROFIT TARGET %</span>
+    <input class="ctrl-input" id="profitTarget" type="number" value="2">
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">STOP LOSS %</span>
+    <input class="ctrl-input" id="stopLoss" type="number" value="1">
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">VOL SPIKE (X)</span>
+    <input class="ctrl-input" id="volSpike" type="number" value="2.5" step="0.1">
+  </div>
+  <button id="start-btn" onclick="toggleBot()">▶ START 24/7</button>
+</div>
+
+<div id="stats-bar">
+  <div class="stat-box"><div class="stat-label">TOTAL P&amp;L</div><div class="stat-value pos" id="totalPnl">+$0.00</div></div>
+  <div class="stat-box"><div class="stat-label">NET PROFIT</div><div class="stat-value pos" id="netProfit">+$0.00</div></div>
+  <div class="stat-box"><div class="stat-label">TOTAL TRADES</div><div class="stat-value neutral" id="totalTrades">0</div></div>
+  <div class="stat-box"><div class="stat-label">WIN RATE</div><div class="stat-value neutral" id="winRate">—</div></div>
+  <div class="stat-box"><div class="stat-label">FEES PAID</div><div class="stat-value neg" id="feesPaid">-$0.00</div></div>
+  <div class="stat-box"><div class="stat-label">ACTIVE TRADES</div><div class="stat-value neutral" id="activeTrades">0</div></div>
+  <div class="stat-box"><div class="stat-label">RUNTIME</div><div class="stat-value neutral" id="runtime">00:00:00</div></div>
+</div>
+
+<div id="error-banner"></div>
+
+<div id="coins-grid">
+  <div class="coin-card" id="card-BTC">
+    <div class="coin-header">
+      <div><div class="coin-name">BTC</div><div class="coin-full">Bitcoin</div></div>
+      <span style="color:#333;font-size:18px">—</span>
+    </div>
+    <div class="coin-price" id="price-BTC">—</div>
+    <div class="coin-metrics">
+      <div class="metric"><div class="metric-label">VOL RATIO</div><div class="metric-value" id="volratio-BTC">—</div></div>
+      <div class="metric"><div class="metric-label">MOMENTUM</div><div class="metric-value" id="momentum-BTC">—</div></div>
+      <div class="metric"><div class="metric-label">POSITION</div><div class="metric-value" id="position-BTC">Flat</div></div>
+    </div>
+    <div class="coin-status offline" id="status-BTC">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-ETH">
+    <div class="coin-header">
+      <div><div class="coin-name">ETH</div><div class="coin-full">Ethereum</div></div>
+      <span style="color:#333;font-size:18px">—</span>
+    </div>
+    <div class="coin-price" id="price-ETH">—</div>
+    <div class="coin-metrics">
+      <div class="metric"><div class="metric-label">VOL RATIO</div><div class="metric-value" id="volratio-ETH">—</div></div>
+      <div class="metric"><div class="metric-label">MOMENTUM</div><div class="metric-value" id="momentum-ETH">—</div></div>
+      <div class="metric"><div class="metric-label">POSITION</div><div class="metric-value" id="position-ETH">Flat</div></div>
+    </div>
+    <div class="coin-status offline" id="status-ETH">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-SOL">
+    <div class="coin-header">
+      <div><div class="coin-name">SOL</div><div class="coin-full">Solana</div></div>
+      <span style="color:#333;font-size:18px">—</span>
+    </div>
+    <div class="coin-price" id="price-SOL">—</div>
+    <div class="coin-metrics">
+      <div class="metric"><div class="metric-label">VOL RATIO</div><div class="metric-value" id="volratio-SOL">—</div></div>
+      <div class="metric"><div class="metric-label">MOMENTUM</div><div class="metric-value" id="momentum-SOL">—</div></div>
+      <div class="metric"><div class="metric-label">POSITION</div><div class="metric-value" id="position-SOL">Flat</div></div>
+    </div>
+    <div class="coin-status offline" id="status-SOL">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-XRP">
+    <div class="coin-header">
+      <div><div class="coin-name">XRP</div><div class="coin-full">Ripple</div></div>
+      <span style="color:#333;font-size:18px">—</span>
+    </div>
+    <div class="coin-price" id="price-XRP">—</div>
+    <div class="coin-metrics">
+      <div class="metric"><div class="metric-label">VOL RATIO</div><div class="metric-value" id="volratio-XRP">—</div></div>
+      <div class="metric"><div class="metric-label">MOMENTUM</div><div class="metric-value" id="momentum-XRP">—</div></div>
+      <div class="metric"><div class="metric-label">POSITION</div><div class="metric-value" id="position-XRP">Flat</div></div>
+    </div>
+    <div class="coin-status offline" id="status-XRP">[ OFFLINE ] No live data</div>
+  </div>
+</div>
+
+<div id="trade-log">
+  <div class="trade-log-title">TRADE LOG — ALL CRYPTOS</div>
+  <div id="trade-entries"><div class="no-trades">No trades yet. Connect and start the bot to begin.</div></div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XRP'];
+const BINANCE_SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', XRP: 'XRPUSDT' };
+const FEE_RATE = 0.001; // 0.1% per side
+const POLL_INTERVAL = 3000; // ms
+const VOL_WINDOW = 20; // candles for baseline volume
+const PROXY = 'https://api.allorigins.win/raw?url=';
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let connected = false;
+let botRunning = false;
+let pollTimer = null;
+let runtimeTimer = null;
+let startTime = null;
+let totalPnl = 0;
+let totalFees = 0;
+let trades = [];
+let wins = 0;
+
+const coinState = {};
+SYMBOLS.forEach(s => {
+  coinState[s] = {
+    price: null,
+    prevPrice: null,
+    volumeHistory: [],   // last N 1m candle volumes
+    currentVolume: 0,
+    baselineVolume: 0,
+    volRatio: 0,
+    upticks: 0,
+    downticks: 0,
+    inTrade: false,
+    entryPrice: null,
+    entryTime: null,
+    lastCandleTime: null
+  };
+});
+
+// ── UI HELPERS ───────────────────────────────────────────────────────────────
+function setStatus(text, cls) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'online' === cls ? 'online' : (cls === 'error' ? 'error' : (cls === 'connecting' ? 'connecting' : ''));
+}
+
+function showError(msg) {
+  const b = document.getElementById('error-banner');
+  b.style.display = 'block';
+  b.textContent = '⚠ ' + msg;
+  setTimeout(() => { b.style.display = 'none'; }, 8000);
+}
+
+function updateCoinUI(sym) {
+  const cs = coinState[sym];
+  const priceEl = document.getElementById('price-' + sym);
+  const vrEl = document.getElementById('volratio-' + sym);
+  const momEl = document.getElementById('momentum-' + sym);
+  const posEl = document.getElementById('position-' + sym);
+  const statusEl = document.getElementById('status-' + sym);
+
+  if (cs.price !== null) {
+    const fmt = cs.price >= 1000 ? cs.price.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2})
+              : cs.price >= 1 ? cs.price.toFixed(4)
+              : cs.price.toFixed(5);
+    priceEl.textContent = '$' + fmt;
+    priceEl.className = 'coin-price ' + (cs.price > cs.prevPrice ? 'up' : cs.price < cs.prevPrice ? 'down' : '');
+  }
+
+  if (cs.volRatio > 0) {
+    vrEl.textContent = cs.volRatio.toFixed(2) + 'x';
+    vrEl.className = 'metric-value' + (cs.volRatio >= parseFloat(document.getElementById('volSpike').value) ? ' spike' : cs.volRatio >= 1.5 ? ' hot' : '');
+  } else {
+    vrEl.textContent = '—';
+    vrEl.className = 'metric-value';
+  }
+
+  const net = cs.upticks - cs.downticks;
+  momEl.textContent = net > 0 ? '+' + net : net === 0 ? '0' : net;
+  momEl.className = 'metric-value' + (net > 3 ? ' hot' : '');
+
+  if (cs.inTrade) {
+    const pct = ((cs.price - cs.entryPrice) / cs.entryPrice * 100).toFixed(2);
+    posEl.textContent = 'LONG ' + (pct > 0 ? '+' : '') + pct + '%';
+    posEl.className = 'metric-value ' + (parseFloat(pct) >= 0 ? 'hot' : 'spike');
+    statusEl.textContent = '[ IN TRADE ] Entry: $' + cs.entryPrice.toFixed(cs.entryPrice >= 100 ? 2 : 4);
+    statusEl.className = 'coin-status in-trade';
+  } else if (connected && botRunning) {
+    posEl.textContent = 'Flat';
+    posEl.className = 'metric-value';
+    statusEl.textContent = '[ WATCHING ] Live data active';
+    statusEl.className = 'coin-status watching';
+  } else if (connected) {
+    statusEl.textContent = '[ CONNECTED ] Bot not started';
+    statusEl.className = 'coin-status active';
+  }
+}
+
+function updateStats() {
+  const activeTrades = SYMBOLS.filter(s => coinState[s].inTrade).length;
+  document.getElementById('totalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.abs(totalPnl).toFixed(2);
+  document.getElementById('totalPnl').className = 'stat-value ' + (totalPnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('netProfit').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.abs(totalPnl).toFixed(2);
+  document.getElementById('netProfit').className = 'stat-value ' + (totalPnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('totalTrades').textContent = trades.length;
+  document.getElementById('winRate').textContent = trades.length > 0 ? (wins / trades.length * 100).toFixed(0) + '%' : '—';
+  document.getElementById('feesPaid').textContent = '-$' + totalFees.toFixed(2);
+  document.getElementById('activeTrades').textContent = activeTrades;
+}
+
+function addTradeLog(entry) {
+  const container = document.getElementById('trade-entries');
+  const noTrades = container.querySelector('.no-trades');
+  if (noTrades) noTrades.remove();
+
+  const el = document.createElement('div');
+  el.className = 'trade-entry';
+  const pnlClass = entry.pnl >= 0 ? 'pos' : 'neg';
+  el.innerHTML = `
+    <span class="te-time">${entry.time}</span>
+    <span class="te-coin">${entry.symbol}</span>
+    <span class="te-type ${entry.side}">${entry.side.toUpperCase()}</span>
+    <span>$${entry.price.toFixed(entry.price >= 100 ? 2 : 4)}</span>
+    <span>$${entry.tradeSize.toFixed(2)}</span>
+    <span class="te-pnl ${pnlClass}">${entry.pnl !== null ? (entry.pnl >= 0 ? '+' : '') + '$' + entry.pnl.toFixed(2) : ''}</span>
+    <span style="color:#333">${entry.reason || ''}</span>
+  `;
+  container.insertBefore(el, container.firstChild);
+}
+
+function updateRuntime() {
+  if (!startTime) return;
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+  const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('runtime').textContent = h + ':' + m + ':' + s;
+}
+
+// ── DATA FETCHING ─────────────────────────────────────────────────────────────
+async function fetchBinanceTicker(sym) {
+  const binSym = BINANCE_SYMBOLS[sym];
+  // Fetch 24hr ticker for price + volume
+  const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`;
+  const proxiedUrl = PROXY + encodeURIComponent(url);
+  const resp = await fetch(proxiedUrl);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  return {
+    price: parseFloat(data.lastPrice),
+    volume: parseFloat(data.volume),      // 24h volume in base asset
+    quoteVolume: parseFloat(data.quoteVolume), // 24h volume in USDT
+    priceChangePercent: parseFloat(data.priceChangePercent)
+  };
+}
+
+async function fetchBinanceKlines(sym) {
+  // Fetch last 21 1-minute candles to compute baseline volume
+  const binSym = BINANCE_SYMBOLS[sym];
+  const url = `https://api.binance.com/api/v3/klines?symbol=${binSym}&interval=1m&limit=21`;
+  const proxiedUrl = PROXY + encodeURIComponent(url);
+  const resp = await fetch(proxiedUrl);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  // Each kline: [openTime, open, high, low, close, volume, ...]
+  return data.map(k => ({
+    time: k[0],
+    volume: parseFloat(k[5]),
+    close: parseFloat(k[4])
+  }));
+}
+
+// ── POLL LOOP ─────────────────────────────────────────────────────────────────
+async function pollAll() {
+  let anySuccess = false;
+
+  for (const sym of SYMBOLS) {
+    try {
+      // Get klines for volume baseline + current candle
+      const klines = await fetchBinanceKlines(sym);
+      const current = klines[klines.length - 1];
+      const historical = klines.slice(0, klines.length - 1); // all but last (incomplete) candle
+
+      const cs = coinState[sym];
+      cs.prevPrice = cs.price;
+      cs.price = current.close;
+
+      // Baseline = average volume of last VOL_WINDOW completed candles
+      const histVols = historical.slice(-VOL_WINDOW).map(k => k.volume);
+      const baseline = histVols.reduce((a, b) => a + b, 0) / histVols.length;
+      cs.baselineVolume = baseline;
+      cs.currentVolume = current.volume;
+      cs.volRatio = baseline > 0 ? current.volume / baseline : 0;
+
+      // Momentum: count upticks vs downticks in recent closes
+      const closes = klines.map(k => k.close);
+      let up = 0, down = 0;
+      for (let i = 1; i < closes.length; i++) {
+        if (closes[i] > closes[i-1]) up++;
+        else if (closes[i] < closes[i-1]) down++;
+      }
+      cs.upticks = up;
+      cs.downticks = down;
+
+      updateCoinUI(sym);
+
+      if (botRunning) checkTrade(sym);
+
+      anySuccess = true;
+
+    } catch (err) {
+      console.warn(sym + ' fetch error:', err.message);
+      document.getElementById('status-' + sym).textContent = '[ ERROR ] ' + err.message.substring(0, 40);
+      document.getElementById('status-' + sym).className = 'coin-status offline';
+    }
+  }
+
+  if (anySuccess) {
+    setStatus('ONLINE', 'online');
+    document.getElementById('connect-btn').textContent = '● CONNECTED';
+    document.getElementById('connect-btn').className = 'connected';
+  } else {
+    setStatus('CONNECTION ERROR', 'error');
+    showError('Binance data fetch failed. Retrying...');
+  }
+
+  updateStats();
+}
+
+// ── TRADE LOGIC ───────────────────────────────────────────────────────────────
+function checkTrade(sym) {
+  const cs = coinState[sym];
+  if (!cs.price) return;
+
+  const tradeSize = parseFloat(document.getElementById('tradeSize').value);
+  const profitTarget = parseFloat(document.getElementById('profitTarget').value) / 100;
+  const stopLoss = parseFloat(document.getElementById('stopLoss').value) / 100;
+  const volSpikeThresh = parseFloat(document.getElementById('volSpike').value);
+
+  // Check daily loss limit
+  if (totalPnl < -parseFloat(document.getElementById('dailyLoss').value)) {
+    if (cs.inTrade) exitTrade(sym, 'DAILY LIMIT');
+    return;
+  }
+
+  if (!cs.inTrade) {
+    // ENTRY: volume spike AND positive momentum
+    const net = cs.upticks - cs.downticks;
+    if (cs.volRatio >= volSpikeThresh && net > 0) {
+      enterTrade(sym, tradeSize);
+    }
+  } else {
+    // EXIT: profit target or stop loss
+    const pct = (cs.price - cs.entryPrice) / cs.entryPrice;
+    if (pct >= profitTarget) {
+      exitTrade(sym, 'PROFIT TARGET');
+    } else if (pct <= -stopLoss) {
+      exitTrade(sym, 'STOP LOSS');
+    }
+  }
+}
+
+function enterTrade(sym, tradeSize) {
+  const cs = coinState[sym];
+  cs.inTrade = true;
+  cs.entryPrice = cs.price;
+  cs.entryTime = Date.now();
+
+  const fee = tradeSize * FEE_RATE;
+  totalFees += fee;
+
+  const now = new Date().toLocaleTimeString('en-US', {hour12: false});
+  addTradeLog({ time: now, symbol: sym, side: 'buy', price: cs.price, tradeSize, pnl: null, reason: 'VOL ' + cs.volRatio.toFixed(1) + 'x' });
+  updateCoinUI(sym);
+  updateStats();
+}
+
+function exitTrade(sym, reason) {
+  const cs = coinState[sym];
+  if (!cs.inTrade) return;
+
+  const tradeSize = parseFloat(document.getElementById('tradeSize').value);
+  const pnl = (cs.price - cs.entryPrice) / cs.entryPrice * tradeSize;
+  const fee = tradeSize * FEE_RATE;
+  totalFees += fee;
+  const netPnl = pnl - fee * 2;
+  totalPnl += netPnl;
+  if (netPnl > 0) wins++;
+
+  trades.push({ sym, pnl: netPnl });
+  cs.inTrade = false;
+  cs.entryPrice = null;
+  cs.entryTime = null;
+
+  const now = new Date().toLocaleTimeString('en-US', {hour12: false});
+  addTradeLog({ time: now, symbol: sym, side: 'sell', price: cs.price, tradeSize, pnl: netPnl, reason });
+  updateCoinUI(sym);
+  updateStats();
+}
+
+// ── CONNECT / START ───────────────────────────────────────────────────────────
+async function toggleConnect() {
+  if (connected) {
+    connected = false;
+    clearInterval(pollTimer);
+    pollTimer = null;
+    setStatus('OFFLINE', '');
+    document.getElementById('connect-btn').textContent = '▶ CONNECT LIVE PRICES';
+    document.getElementById('connect-btn').className = '';
+    SYMBOLS.forEach(s => {
+      document.getElementById('status-' + s).textContent = '[ OFFLINE ] No live data';
+      document.getElementById('status-' + s).className = 'coin-status offline';
+    });
+    return;
+  }
+
+  setStatus('CONNECTING...', 'connecting');
+  document.getElementById('connect-btn').textContent = '... CONNECTING';
+  connected = true;
+
+  await pollAll();
+  pollTimer = setInterval(pollAll, POLL_INTERVAL);
+}
+
+function toggleBot() {
+  const btn = document.getElementById('start-btn');
+  if (!botRunning) {
+    if (!connected) {
+      showError('Connect to live prices first before starting the bot.');
+      return;
+    }
+    botRunning = true;
+    startTime = Date.now();
+    runtimeTimer = setInterval(updateRuntime, 1000);
+    btn.textContent = '■ STOP BOT';
+    btn.className = 'running';
+    SYMBOLS.forEach(s => updateCoinUI(s));
+  } else {
+    botRunning = false;
+    clearInterval(runtimeTimer);
+    // Exit all open trades
+    SYMBOLS.forEach(s => { if (coinState[s].inTrade) exitTrade(s, 'BOT STOPPED'); });
+    btn.textContent = '▶ START 24/7';
+    btn.className = '';
+    SYMBOLS.forEach(s => updateCoinUI(s));
+  }
+}
+</script>
+
+
+</body></html>
