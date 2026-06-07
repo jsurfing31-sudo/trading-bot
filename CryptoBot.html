@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRYPTO//BOT v3.0</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a0a; color:#e0e0e0; font-family:'Courier New',monospace; font-size:13px; }
+  #header { background:#111; border-bottom:1px solid #222; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
+  #header h1 { color:#00ff88; font-size:18px; letter-spacing:2px; }
+  #header .meta { color:#555; font-size:11px; }
+  #status-bar { background:#1a1a1a; border-bottom:1px solid #222; padding:8px 16px; display:flex; align-items:center; gap:16px; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .dot.green { background:#00ff88; box-shadow:0 0 6px #00ff88; }
+  .dot.red { background:#ff4444; }
+  .dot.yellow { background:#ffaa00; }
+  #feed-info { background:#111; border:1px solid #1a3a1a; padding:8px 16px; margin:10px 16px; border-radius:4px; font-size:11px; color:#00ff88; display:flex; align-items:center; justify-content:space-between; }
+  #connect-btn { background:#00ff88; color:#000; border:none; padding:8px 20px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; cursor:pointer; border-radius:3px; letter-spacing:1px; }
+  #connect-btn:hover { background:#00cc66; }
+  #connect-btn:disabled { background:#333; color:#666; cursor:default; }
+  #controls { background:#111; padding:10px 16px; display:flex; gap:20px; align-items:center; border-bottom:1px solid #222; flex-wrap:wrap; }
+  .ctrl-group { display:flex; flex-direction:column; gap:3px; }
+  .ctrl-group label { font-size:10px; color:#666; letter-spacing:1px; }
+  .ctrl-group input { background:#1a1a1a; border:1px solid #333; color:#e0e0e0; padding:5px 8px; font-family:'Courier New',monospace; font-size:12px; width:90px; border-radius:3px; }
+  #start-btn { background:#00ff88; color:#000; border:none; padding:8px 24px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; cursor:pointer; border-radius:3px; letter-spacing:1px; margin-top:14px; }
+  #start-btn:hover { background:#00cc66; }
+  #stop-btn { background:#ff4444; color:#fff; border:none; padding:8px 24px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; cursor:pointer; border-radius:3px; letter-spacing:1px; margin-top:14px; display:none; }
+  #stats-bar { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#222; margin:0; }
+  .stat-box { background:#111; padding:10px 12px; }
+  .stat-box .label { font-size:10px; color:#555; letter-spacing:1px; margin-bottom:4px; }
+  .stat-box .value { font-size:16px; font-weight:bold; color:#e0e0e0; }
+  .stat-box .value.green { color:#00ff88; }
+  .stat-box .value.red { color:#ff4444; }
+  #coins { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#222; margin:1px 0; }
+  .coin-card { background:#111; padding:12px; }
+  .coin-card .coin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .coin-card .coin-name { font-size:15px; font-weight:bold; color:#fff; }
+  .coin-card .coin-full { font-size:10px; color:#555; margin-top:2px; }
+  .coin-card .coin-price { font-size:20px; font-weight:bold; color:#00ff88; font-family:'Courier New',monospace; }
+  .coin-card .coin-change { font-size:11px; margin-top:2px; }
+  .coin-card .coin-change.up { color:#00ff88; }
+  .coin-card .coin-change.down { color:#ff4444; }
+  .coin-card .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:8px 0; }
+  .coin-card .metric { background:#0d0d0d; padding:5px 7px; border-radius:3px; }
+  .coin-card .metric .m-label { font-size:9px; color:#555; letter-spacing:1px; }
+  .coin-card .metric .m-val { font-size:12px; color:#aaa; margin-top:2px; }
+  .coin-card .signal { padding:5px 8px; border-radius:3px; font-size:11px; text-align:center; margin-top:6px; }
+  .signal.flat { background:#1a1a1a; color:#555; }
+  .signal.long { background:#0d2b1a; color:#00ff88; border:1px solid #00ff88; }
+  .signal.exit { background:#2b0d0d; color:#ff4444; border:1px solid #ff4444; }
+  .signal.wait { background:#1a1a0d; color:#ffaa00; }
+  .coin-card .position-bar { background:#0d2b1a; border:1px solid #00ff88; padding:5px 8px; margin-top:6px; font-size:11px; color:#00ff88; border-radius:3px; }
+  #log { background:#0d0d0d; border-top:1px solid #222; padding:10px 16px; height:160px; overflow-y:auto; }
+  #log .log-title { font-size:10px; color:#555; letter-spacing:2px; margin-bottom:6px; }
+  .log-entry { font-size:11px; padding:2px 0; border-bottom:1px solid #151515; }
+  .log-entry.buy { color:#00ff88; }
+  .log-entry.sell { color:#ffaa00; }
+  .log-entry.win { color:#00ff88; }
+  .log-entry.loss { color:#ff4444; }
+  .log-entry.info { color:#555; }
+  #error-bar { background:#2b0d0d; border:1px solid #ff4444; color:#ff4444; padding:8px 16px; margin:0 16px 8px; border-radius:4px; font-size:11px; display:none; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>CRYPTO//BOT <span style="font-size:12px;color:#555;">v3.0</span> &nbsp;<span id="conn-dot" style="font-size:11px;color:#555;">● OFFLINE</span></h1>
+  </div>
+  <div class="meta">24/7 CRYPTO MOMENTUM SCALPER — PAPER TRADING</div>
+</div>
+
+<div id="feed-info">
+  <span>⚡ CRYPTOCOMPARE LIVE FEED — NO API KEYS REQUIRED &nbsp;·&nbsp; BTC · ETH · SOL · XRP &nbsp;·&nbsp; Real-time WebSocket</span>
+  <button id="connect-btn" onclick="connectFeed()">▶ CONNECT LIVE PRICES</button>
+</div>
+
+<div id="error-bar" id="error-bar"></div>
+
+<div id="controls">
+  <div class="ctrl-group">
+    <label>TRADE SIZE $</label>
+    <input type="number" id="trade-size" value="100">
+  </div>
+  <div class="ctrl-group">
+    <label>DAILY LOSS LIMIT $</label>
+    <input type="number" id="loss-limit" value="20">
+  </div>
+  <div class="ctrl-group">
+    <label>PROFIT TARGET %</label>
+    <input type="number" id="profit-pct" value="2" step="0.1">
+  </div>
+  <div class="ctrl-group">
+    <label>STOP LOSS %</label>
+    <input type="number" id="stop-pct" value="1" step="0.1">
+  </div>
+  <div class="ctrl-group">
+    <label>VOL SPIKE (X)</label>
+    <input type="number" id="vol-spike" value="2.5" step="0.1">
+  </div>
+  <button id="start-btn" onclick="startBot()">▶ START 24/7</button>
+  <button id="stop-btn" onclick="stopBot()">■ STOP</button>
+</div>
+
+<div id="stats-bar">
+  <div class="stat-box"><div class="label">TOTAL P&amp;L</div><div class="value green" id="s-pnl">+$0.00</div></div>
+  <div class="stat-box"><div class="label">NET PROFIT</div><div class="value green" id="s-net">+$0.00</div></div>
+  <div class="stat-box"><div class="label">TOTAL TRADES</div><div class="value" id="s-trades">0</div></div>
+  <div class="stat-box"><div class="label">WIN RATE</div><div class="value" id="s-wr">—</div></div>
+  <div class="stat-box"><div class="label">FEES PAID</div><div class="value red" id="s-fees">-$0.00</div></div>
+  <div class="stat-box"><div class="label">ACTIVE TRADES</div><div class="value" id="s-active">0</div></div>
+  <div class="stat-box"><div class="label">RUNTIME</div><div class="value" id="s-runtime">00:00:00</div></div>
+</div>
+
+<div id="coins">
+  <div class="coin-card" id="card-BTC">
+    <div class="coin-header">
+      <div><div class="coin-name">BTC</div><div class="coin-full">Bitcoin</div></div>
+      <div><div class="coin-price" id="price-BTC">—</div><div class="coin-change" id="chg-BTC">—</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-label">VOL RATIO</div><div class="m-val" id="vol-BTC">—</div></div>
+      <div class="metric"><div class="m-label">MOMENTUM</div><div class="m-val" id="mom-BTC">—</div></div>
+      <div class="metric"><div class="m-label">POSITION</div><div class="m-val" id="pos-BTC">Flat</div></div>
+    </div>
+    <div class="signal flat" id="sig-BTC">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-ETH">
+    <div class="coin-header">
+      <div><div class="coin-name">ETH</div><div class="coin-full">Ethereum</div></div>
+      <div><div class="coin-price" id="price-ETH">—</div><div class="coin-change" id="chg-ETH">—</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-label">VOL RATIO</div><div class="m-val" id="vol-ETH">—</div></div>
+      <div class="metric"><div class="m-label">MOMENTUM</div><div class="m-val" id="mom-ETH">—</div></div>
+      <div class="metric"><div class="m-label">POSITION</div><div class="m-val" id="pos-ETH">Flat</div></div>
+    </div>
+    <div class="signal flat" id="sig-ETH">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-SOL">
+    <div class="coin-header">
+      <div><div class="coin-name">SOL</div><div class="coin-full">Solana</div></div>
+      <div><div class="coin-price" id="price-SOL">—</div><div class="coin-change" id="chg-SOL">—</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-label">VOL RATIO</div><div class="m-val" id="vol-SOL">—</div></div>
+      <div class="metric"><div class="m-label">MOMENTUM</div><div class="m-val" id="mom-SOL">—</div></div>
+      <div class="metric"><div class="m-label">POSITION</div><div class="m-val" id="pos-SOL">Flat</div></div>
+    </div>
+    <div class="signal flat" id="sig-SOL">[ OFFLINE ] No live data</div>
+  </div>
+  <div class="coin-card" id="card-XRP">
+    <div class="coin-header">
+      <div><div class="coin-name">XRP</div><div class="coin-full">Ripple</div></div>
+      <div><div class="coin-price" id="price-XRP">—</div><div class="coin-change" id="chg-XRP">—</div></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="m-label">VOL RATIO</div><div class="m-val" id="vol-XRP">—</div></div>
+      <div class="metric"><div class="m-label">MOMENTUM</div><div class="m-val" id="mom-XRP">—</div></div>
+      <div class="metric"><div class="m-label">POSITION</div><div class="m-val" id="pos-XRP">Flat</div></div>
+    </div>
+    <div class="signal flat" id="sig-XRP">[ OFFLINE ] No live data</div>
+  </div>
+</div>
+
+<div id="log">
+  <div class="log-title">TRADE LOG — ALL CRYPTOS</div>
+  <div id="log-entries"></div>
+</div>
+
+<script>
+const COINS = ['BTC','ETH','SOL','XRP'];
+const CC_SUBS = ['5~CCCAGG~BTC~USD','5~CCCAGG~ETH~USD','5~CCCAGG~SOL~USD','5~CCCAGG~XRP~USD'];
+
+const S = {
+  running: false,
+  connected: false,
+  ws: null,
+  prices: {BTC:0, ETH:0, SOL:0, XRP:0},
+  prevPrices: {BTC:[], ETH:[], SOL:[], XRP:[]},
+  volumes: {BTC:[], ETH:[], SOL:[], XRP:[]},
+  positions: {BTC:null, ETH:null, SOL:null, XRP:null},
+  wins: 0, losses: 0,
+  totalPnl: 0, totalFees: 0,
+  startTime: null,
+  runtimeInterval: null,
+  reconnectTimer: null,
+  reconnectDelay: 5000,
+  trades: 0
+};
+
+function fmtPrice(p, coin) {
+  if (coin === 'XRP') return '$' + p.toFixed(4);
+  if (coin === 'SOL') return '$' + p.toFixed(2);
+  if (coin === 'ETH') return '$' + p.toFixed(2);
+  return '$' + p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtPnl(v) { return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2); }
+
+function connectFeed() {
+  document.getElementById('connect-btn').disabled = true;
+  document.getElementById('connect-btn').textContent = 'CONNECTING...';
+  showError('');
+
+  if (S.ws) { try { S.ws.close(); } catch(e){} }
+
+  const ws = new WebSocket('wss://streamer.cryptocompare.com/v2?api_key=demo');
+  S.ws = ws;
+
+  ws.onopen = function() {
+    const sub = { action: 'SubAdd', subs: CC_SUBS };
+    ws.send(JSON.stringify(sub));
+    S.connected = true;
+    document.getElementById('conn-dot').innerHTML = '<span style="color:#00ff88">● LIVE</span>';
+    document.getElementById('connect-btn').textContent = '✓ CONNECTED';
+    document.getElementById('connect-btn').style.background = '#00cc66';
+    addLog('Connected to CryptoCompare live feed', 'info');
+    COINS.forEach(c => {
+      document.getElementById('sig-' + c).className = 'signal wait';
+      document.getElementById('sig-' + c).textContent = '[ WAITING ] Receiving prices...';
+    });
+  };
+
+  ws.onmessage = function(e) {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.TYPE === '5' && d.FROMSYMBOL && d.PRICE) {
+        const coin = d.FROMSYMBOL;
+        const price = d.PRICE;
+        const vol = d.TOTALVOLUME24H || 0;
+        onTick(coin, price, vol);
+      }
+      // Handle rate limit / auth issues
+      if (d.TYPE === '429' || d.TYPE === '500') {
+        showError('CryptoCompare rate limit hit — reconnecting in 30s...');
+        setTimeout(connectFeed, 30000);
+      }
+    } catch(err) {}
+  };
+
+  ws.onerror = function() {
+    S.connected = false;
+    document.getElementById('conn-dot').innerHTML = '<span style="color:#ff4444">● ERROR</span>';
+    showError('Connection error — retrying in 10s...');
+    document.getElementById('connect-btn').disabled = false;
+    document.getElementById('connect-btn').textContent = '▶ CONNECT LIVE PRICES';
+    document.getElementById('connect-btn').style.background = '#00ff88';
+    scheduleReconnect();
+  };
+
+  ws.onclose = function() {
+    S.connected = false;
+    document.getElementById('conn-dot').innerHTML = '<span style="color:#ffaa00">● OFFLINE</span>';
+    if (S.running) {
+      showError('Connection lost — retrying in 10s...');
+      scheduleReconnect();
+    }
+  };
+}
+
+function scheduleReconnect() {
+  if (S.reconnectTimer) clearTimeout(S.reconnectTimer);
+  S.reconnectTimer = setTimeout(connectFeed, 10000);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-bar');
+  if (msg) { el.textContent = '● ' + msg; el.style.display = 'block'; }
+  else { el.style.display = 'none'; }
+}
+
+function onTick(coin, price, vol) {
+  if (!COINS.includes(coin)) return;
+
+  const prev = S.prices[coin];
+  S.prices[coin] = price;
+
+  // Track price history (last 20 ticks)
+  S.prevPrices[coin].push(price);
+  if (S.prevPrices[coin].length > 20) S.prevPrices[coin].shift();
+
+  // Track volume
+  S.volumes[coin].push(vol);
+  if (S.volumes[coin].length > 10) S.volumes[coin].shift();
+
+  // Update price display
+  document.getElementById('price-' + coin).textContent = fmtPrice(price, coin);
+
+  // Change %
+  if (prev > 0) {
+    const chgPct = ((price - prev) / prev * 100);
+    const chgEl = document.getElementById('chg-' + coin);
+    chgEl.textContent = (chgPct >= 0 ? '▲ +' : '▼ ') + chgPct.toFixed(4) + '%';
+    chgEl.className = 'coin-change ' + (chgPct >= 0 ? 'up' : 'down');
+  }
+
+  // Momentum: price vs 10-tick avg
+  let mom = '—';
+  if (S.prevPrices[coin].length >= 5) {
+    const avg = S.prevPrices[coin].slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, S.prevPrices[coin].length);
+    const momPct = ((price - avg) / avg * 100);
+    mom = (momPct >= 0 ? '+' : '') + momPct.toFixed(3) + '%';
+    document.getElementById('mom-' + coin).textContent = mom;
+    document.getElementById('mom-' + coin).style.color = momPct > 0 ? '#00ff88' : momPct < 0 ? '#ff4444' : '#aaa';
+  }
+
+  // Volume ratio
+  let volRatio = '—';
+  if (S.volumes[coin].length >= 3) {
+    const avgVol = S.volumes[coin].slice(0,-1).reduce((a,b)=>a+b,0) / (S.volumes[coin].length-1);
+    if (avgVol > 0) {
+      const ratio = vol / avgVol;
+      volRatio = ratio.toFixed(2) + 'x';
+      document.getElementById('vol-' + coin).textContent = volRatio;
+      document.getElementById('vol-' + coin).style.color = ratio >= parseFloat(document.getElementById('vol-spike').value) ? '#ffaa00' : '#aaa';
+    }
+  }
+
+  if (S.running) checkSignal(coin, price);
+}
+
+function checkSignal(coin, price) {
+  const profitPct = parseFloat(document.getElementById('profit-pct').value) / 100;
+  const stopPct = parseFloat(document.getElementById('stop-pct').value) / 100;
+  const tradeSize = parseFloat(document.getElementById('trade-size').value);
+  const lossLimit = parseFloat(document.getElementById('loss-limit').value);
+  const volSpike = parseFloat(document.getElementById('vol-spike').value);
+  const FEE_RATE = 0.004; // 0.4% round trip
+
+  // Check daily loss limit
+  if (S.totalPnl - S.totalFees <= -lossLimit) {
+    document.getElementById('sig-' + coin).className = 'signal exit';
+    document.getElementById('sig-' + coin).textContent = '[ HALTED ] Daily loss limit reached';
+    return;
+  }
+
+  const pos = S.positions[coin];
+
+  // Manage open position
+  if (pos) {
+    const pnlPct = (price - pos.entry) / pos.entry;
+    const pnl = pnlPct * tradeSize;
+    document.getElementById('sig-' + coin).className = 'signal long';
+    document.getElementById('sig-' + coin).textContent =
+      '[ IN TRADE ] Entry: ' + fmtPrice(pos.entry, coin) + '  P&L: ' + fmtPnl(pnl);
+    document.getElementById('pos-' + coin).textContent = 'Long';
+
+    if (pnlPct >= profitPct) {
+      // Take profit
+      closeTrade(coin, price, pnl, tradeSize, FEE_RATE, 'TP');
+    } else if (pnlPct <= -stopPct) {
+      // Stop loss
+      closeTrade(coin, price, pnl, tradeSize, FEE_RATE, 'SL');
+    }
+    return;
+  }
+
+  // Look for entry
+  if (S.prevPrices[coin].length < 5) {
+    document.getElementById('sig-' + coin).className = 'signal wait';
+    document.getElementById('sig-' + coin).textContent = '[ WARMING UP ] Building price history...';
+    return;
+  }
+
+  const avg = S.prevPrices[coin].slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, S.prevPrices[coin].length);
+  const momPct = (price - avg) / avg * 100;
+
+  // Volume ratio check
+  let ratio = 0;
+  if (S.volumes[coin].length >= 3) {
+    const avgVol = S.volumes[coin].slice(0,-1).reduce((a,b)=>a+b,0) / (S.volumes[coin].length-1);
+    if (avgVol > 0) ratio = S.volumes[coin][S.volumes[coin].length-1] / avgVol;
+  }
+
+  // Entry: momentum up + volume spike
+  if (momPct > 0.1 && ratio >= volSpike) {
+    const fees = tradeSize * FEE_RATE;
+    S.positions[coin] = { entry: price, size: tradeSize };
+    S.totalFees += fees / 2; // entry fee
+    S.trades++;
+    document.getElementById('s-active').textContent = Object.values(S.positions).filter(p=>p).length;
+    addLog('BUY ' + coin + ' @ ' + fmtPrice(price, coin) + '  Vol:' + ratio.toFixed(2) + 'x  Mom:+' + momPct.toFixed(3) + '%', 'buy');
+    document.getElementById('sig-' + coin).className = 'signal long';
+    document.getElementById('sig-' + coin).textContent = '[ ENTERED ] @ ' + fmtPrice(price, coin);
+    document.getElementById('pos-' + coin).textContent = 'Long';
+  } else {
+    document.getElementById('sig-' + coin).className = 'signal flat';
+    document.getElementById('sig-' + coin).textContent = '[ WATCHING ] Mom:' + (momPct>=0?'+':'') + momPct.toFixed(3) + '%  Vol:' + (ratio>0?ratio.toFixed(2)+'x':'—');
+  }
+}
+
+function closeTrade(coin, price, pnl, tradeSize, feeRate, reason) {
+  const fees = tradeSize * feeRate / 2; // exit fee
+  S.totalFees += fees;
+  S.totalPnl += pnl;
+  S.positions[coin] = null;
+  document.getElementById('pos-' + coin).textContent = 'Flat';
+
+  if (pnl > 0) {
+    S.wins++;
+    addLog('SELL ' + coin + ' @ ' + fmtPrice(price, coin) + '  [' + reason + ']  P&L: ' + fmtPnl(pnl), 'win');
+  } else {
+    S.losses++;
+    addLog('SELL ' + coin + ' @ ' + fmtPrice(price, coin) + '  [' + reason + ']  P&L: ' + fmtPnl(pnl), 'loss');
+  }
+
+  updateStats();
+  document.getElementById('s-active').textContent = Object.values(S.positions).filter(p=>p).length;
+}
+
+function updateStats() {
+  const net = S.totalPnl - S.totalFees;
+  const tot = S.wins + S.losses;
+  document.getElementById('s-pnl').textContent = fmtPnl(S.totalPnl);
+  document.getElementById('s-pnl').className = 'value ' + (S.totalPnl >= 0 ? 'green' : 'red');
+  document.getElementById('s-net').textContent = fmtPnl(net);
+  document.getElementById('s-net').className = 'value ' + (net >= 0 ? 'green' : 'red');
+  document.getElementById('s-trades').textContent = tot;
+  document.getElementById('s-wr').textContent = tot > 0 ? Math.round(S.wins/tot*100) + '%' : '—';
+  document.getElementById('s-fees').textContent = '-$' + S.totalFees.toFixed(2);
+}
+
+function addLog(msg, type) {
+  const el = document.getElementById('log-entries');
+  const ts = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + type;
+  div.textContent = '[' + ts + ']  ' + msg;
+  el.insertBefore(div, el.firstChild);
+  if (el.children.length > 200) el.removeChild(el.lastChild);
+}
+
+function updateRuntime() {
+  if (!S.startTime) return;
+  const sec = Math.floor((Date.now() - S.startTime) / 1000);
+  const h = String(Math.floor(sec/3600)).padStart(2,'0');
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  document.getElementById('s-runtime').textContent = h+':'+m+':'+s;
+}
+
+function startBot() {
+  if (!S.connected) {
+    showError('Connect to live prices first!');
+    return;
+  }
+  S.running = true;
+  S.startTime = Date.now();
+  S.runtimeInterval = setInterval(updateRuntime, 1000);
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = '';
+  addLog('Bot started — monitoring BTC, ETH, SOL, XRP', 'info');
+}
+
+function stopBot() {
+  S.running = false;
+  clearInterval(S.runtimeInterval);
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('stop-btn').style.display = 'none';
+  COINS.forEach(c => {
+    if (!S.positions[c]) {
+      document.getElementById('sig-' + c).className = 'signal flat';
+      document.getElementById('sig-' + c).textContent = '[ STOPPED ]';
+    }
+  });
+  addLog('Bot stopped. Total trades: ' + (S.wins+S.losses) + '  Net P&L: ' + fmtPnl(S.totalPnl - S.totalFees), 'info');
+}
+</script>
+</body>
+</html>
