@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/jsurf/Downloads/CryptoBot_3.html -->
+<!-- saved from url=(0049)file:///C:/Users/jsurf/Downloads/CryptoBot_4.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -206,7 +206,21 @@ const BINANCE_SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', XRP: '
 const FEE_RATE = 0.001; // 0.1% per side
 const POLL_INTERVAL = 3000; // ms
 const VOL_WINDOW = 20; // candles for baseline volume
-const PROXY = 'https://api.allorigins.win/raw?url=';
+const PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://proxy.cors.sh/',
+];
+let proxyIndex = 0;
+
+function getProxy() {
+  return PROXIES[proxyIndex % PROXIES.length];
+}
+
+function nextProxy() {
+  proxyIndex++;
+  console.log('Switching to proxy:', PROXIES[proxyIndex % PROXIES.length]);
+}
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let connected = false;
@@ -338,31 +352,35 @@ function updateRuntime() {
 }
 
 // ── DATA FETCHING ─────────────────────────────────────────────────────────────
+async function fetchWithProxy(url) {
+  let lastErr;
+  for (let i = 0; i < PROXIES.length; i++) {
+    try {
+      const proxy = PROXIES[(proxyIndex + i) % PROXIES.length];
+      const resp = await fetch(proxy + encodeURIComponent(url));
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return await resp.json();
+    } catch(e) { lastErr = e; nextProxy(); }
+  }
+  throw lastErr;
+}
+
 async function fetchBinanceTicker(sym) {
   const binSym = BINANCE_SYMBOLS[sym];
-  // Fetch 24hr ticker for price + volume
   const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`;
-  const proxiedUrl = PROXY + encodeURIComponent(url);
-  const resp = await fetch(proxiedUrl);
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  const data = await resp.json();
+  const data = await fetchWithProxy(url);
   return {
     price: parseFloat(data.lastPrice),
-    volume: parseFloat(data.volume),      // 24h volume in base asset
-    quoteVolume: parseFloat(data.quoteVolume), // 24h volume in USDT
+    volume: parseFloat(data.volume),
+    quoteVolume: parseFloat(data.quoteVolume),
     priceChangePercent: parseFloat(data.priceChangePercent)
   };
 }
 
 async function fetchBinanceKlines(sym) {
-  // Fetch last 21 1-minute candles to compute baseline volume
   const binSym = BINANCE_SYMBOLS[sym];
   const url = `https://api.binance.com/api/v3/klines?symbol=${binSym}&interval=1m&limit=21`;
-  const proxiedUrl = PROXY + encodeURIComponent(url);
-  const resp = await fetch(proxiedUrl);
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  const data = await resp.json();
-  // Each kline: [openTime, open, high, low, close, volume, ...]
+  const data = await fetchWithProxy(url);
   return data.map(k => ({
     time: k[0],
     volume: parseFloat(k[5]),
